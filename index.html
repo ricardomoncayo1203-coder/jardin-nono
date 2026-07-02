@@ -41,7 +41,7 @@
     repeating-linear-gradient(45deg,#e9e4d6 0 18px,#e4dfd0 18px 36px); }
   .ph-label{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; text-align:center;
     color:#8c8a78; font-size:13px; font-weight:600; padding:20px; pointer-events:none; }
-  .pin{ position:absolute; transform:translate(-50%,-100%); cursor:pointer; }
+  .pin{ position:absolute; transform:scale(var(--pinScale,1)) translate(-50%,-100%); transform-origin:0 0; cursor:pointer; }
   .pin b{ display:flex; align-items:center; justify-content:center; width:30px; height:30px; border-radius:50% 50% 50% 4px;
     transform:rotate(45deg); color:#fff; font-size:11px; font-weight:800; box-shadow:0 2px 5px rgba(0,0,0,.35); border:2px solid #fff; }
   .pin b span{ transform:rotate(-45deg); }
@@ -115,7 +115,7 @@
   .maptools{flex-wrap:wrap}
   #zoneSvg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
   #zoneLabels{position:absolute;inset:0;pointer-events:none}
-  .zlabel{position:absolute;transform:translate(-50%,-50%);background:rgba(255,255,255,.88);border:1.5px solid;
+  .zlabel{position:absolute;transform:scale(var(--pinScale,1)) translate(-50%,-50%);transform-origin:0 0;background:rgba(255,255,255,.88);border:1.5px solid;
     border-radius:14px;padding:2px 9px;font-size:11px;font-weight:800;white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,.2)}
   .pin{z-index:5}
   .pin.house b{border-radius:50%;transform:none;width:34px;height:34px;font-size:16px}
@@ -129,6 +129,20 @@
     background:rgba(255,255,255,.93);font-size:20px;font-weight:800;color:var(--brand);
     box-shadow:0 1px 5px rgba(0,0,0,.22);cursor:pointer;line-height:1;padding:0}
   #drawTools{gap:6px}
+  /* v6: galería del interior (foto grande para identificar la planta) */
+  #intlist{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  #intlist .hint{ grid-column:1/-1; }
+  .gcard{ background:var(--card); border:1px solid var(--line); border-radius:14px; overflow:hidden; cursor:pointer; }
+  .gphoto{ width:100%; aspect-ratio:1/1; background:#e9e4d6 center/cover; position:relative;
+    display:flex; align-items:center; justify-content:center; font-size:34px; }
+  .gid{ position:absolute; left:7px; top:7px; background:rgba(0,0,0,.55); color:#fff; font-size:13px;
+    font-weight:800; border-radius:9px; padding:2px 9px; }
+  .gdot{ position:absolute; right:7px; top:7px; width:15px; height:15px; border-radius:50%;
+    border:2px solid #fff; box-shadow:0 1px 3px rgba(0,0,0,.3); }
+  .gmeta{ padding:8px 10px 10px; }
+  .gnm{ font-weight:700; font-size:13.5px; line-height:1.15; }
+  .gsp{ font-size:11px; color:var(--muted); font-style:italic; margin-top:2px; overflow:hidden;
+    text-overflow:ellipsis; white-space:nowrap; }
   /* login */
   #login{ position:fixed; inset:0; background:linear-gradient(160deg,#2f5d34,#183a1d); z-index:200; display:flex; align-items:center; justify-content:center; padding:24px; }
   .loginbox{ background:#fff; border-radius:20px; padding:26px 22px; width:100%; max-width:360px; box-shadow:0 12px 40px rgba(0,0,0,.3); }
@@ -364,6 +378,15 @@ function plantCard(p){
     '<div class="badge" style="background:'+STATUS[p.status].c+'"></div>';
   return c;
 }
+function plantCardBig(p){
+  const c=document.createElement('div'); c.className='gcard'; c.onclick=()=>openDetail(p.id);
+  const ph=refPhoto(p);
+  c.innerHTML='<div class="gphoto" '+(ph?'style="background-image:url('+ph+')"':'')+'>'+(ph?'':'🌿')+
+      '<span class="gid">'+p.id+'</span><span class="gdot" style="background:'+STATUS[p.status].c+'"></span></div>'+
+    '<div class="gmeta"><div class="gnm">'+(p.name||'Sin nombre')+'</div>'+
+    '<div class="gsp">'+(p.species||'')+'</div></div>';
+  return c;
+}
 function renderList(){
   const ord={rojo:0,amarillo:1,verde:2};
   let rows=PLANTS.filter(p=>{
@@ -377,7 +400,8 @@ function renderList(){
     box.innerHTML='';
     const r=rows.filter(p=>p.loc===loc);
     if(!r.length){ box.innerHTML='<div class="hint">No hay plantas en este filtro.</div>'; return; }
-    r.forEach(p=>box.appendChild(plantCard(p)));
+    const maker = loc==='sunroom' ? plantCardBig : plantCard;
+    r.forEach(p=>box.appendChild(maker(p)));
   });
 }
 function setFilter(f){ filter=f; document.querySelectorAll('.fbtn[data-f]').forEach(b=>b.classList.toggle('on',b.dataset.f===f)); renderList(); }
@@ -551,7 +575,7 @@ function showView(v){
     bb.style.display='flex';
     document.getElementById('backTitle').textContent = v==='exterior' ? '🌳 Exterior — Jardín' : '🏠 Interior — Invernadero';
   }
-  mapScale=1; mapTX=0; mapTY=0; { const _mi=document.getElementById('mapinner'); if(_mi) _mi.style.transform=''; }
+  mapScale=1; mapTX=0; mapTY=0; { const _mi=document.getElementById('mapinner'); if(_mi){ _mi.style.transform=''; _mi.style.removeProperty('--pinScale'); } }
   window.scrollTo(0,0);
 }
 function goHome(){
@@ -767,7 +791,9 @@ window.addEventListener('hashchange', handleHash);
 
 /* ---------------- v4: zoom / paneo del mapa (solo el mapa se agranda) ---------------- */
 let mapScale=1, mapTX=0, mapTY=0, gestureMoved=false;
-function applyMapTransform(){ const inner=document.getElementById('mapinner'); if(inner) inner.style.transform='translate('+mapTX+'px,'+mapTY+'px) scale('+mapScale+')'; }
+function applyMapTransform(){ const inner=document.getElementById('mapinner'); if(!inner) return;
+  inner.style.transform='translate('+mapTX+'px,'+mapTY+'px) scale('+mapScale+')';
+  inner.style.setProperty('--pinScale', (1/mapScale).toFixed(4)); }
 function clampPan(){ const w=document.getElementById('mapwrap'); if(!w) return; const W=w.clientWidth,H=w.clientHeight; const minX=W-W*mapScale,minY=H-H*mapScale; mapTX=Math.max(minX,Math.min(0,mapTX)); mapTY=Math.max(minY,Math.min(0,mapTY)); }
 function zoomAt(px,py,ns){ ns=Math.max(1,Math.min(4,ns)); const cx=(px-mapTX)/mapScale, cy=(py-mapTY)/mapScale; mapScale=ns; mapTX=px-cx*mapScale; mapTY=py-cy*mapScale; clampPan(); applyMapTransform(); }
 function mapZoomBtn(dir){ const w=document.getElementById('mapwrap'); if(!w)return; zoomAt(w.clientWidth/2,w.clientHeight/2, mapScale*(dir>0?1.6:1/1.6)); }
