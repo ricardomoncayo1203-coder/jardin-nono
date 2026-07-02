@@ -104,6 +104,12 @@
   .pin.house b span{transform:none}
   #mapwrap.drawing .pin{pointer-events:none}
   #mapwrap.drawing{cursor:crosshair}
+  #mapwrap{touch-action:none}
+  #mapinner{position:relative;transform-origin:0 0;will-change:transform}
+  #mapzoom{position:absolute;right:8px;bottom:8px;display:flex;flex-direction:column;gap:6px;z-index:20}
+  #mapzoom button{width:40px;height:40px;border-radius:11px;border:1px solid var(--line);
+    background:rgba(255,255,255,.93);font-size:20px;font-weight:800;color:var(--brand);
+    box-shadow:0 1px 5px rgba(0,0,0,.22);cursor:pointer;line-height:1;padding:0}
   #drawTools{gap:6px}
   /* login */
   #login{ position:fixed; inset:0; background:linear-gradient(160deg,#2f5d34,#183a1d); z-index:200; display:flex; align-items:center; justify-content:center; padding:24px; }
@@ -178,9 +184,16 @@
       </span>
     </div>
     <div class="mapwrap" id="mapwrap" onclick="mapClick(event)">
-      <img src="https://yyumodrltjeocbznqwld.supabase.co/storage/v1/object/public/plant-photos/map/base_map.jpg" alt="Mapa del jardín de Nono" style="width:100%;display:block">
-      <svg id="zoneSvg" viewBox="0 0 100 100" preserveAspectRatio="none"></svg>
-      <div id="zoneLabels"></div>
+      <div id="mapinner">
+        <img src="https://yyumodrltjeocbznqwld.supabase.co/storage/v1/object/public/plant-photos/map/base_map.jpg" alt="Mapa del jardín de Nono" style="width:100%;display:block">
+        <svg id="zoneSvg" viewBox="0 0 100 100" preserveAspectRatio="none"></svg>
+        <div id="zoneLabels"></div>
+      </div>
+      <div id="mapzoom">
+        <button type="button" aria-label="Acercar" onclick="event.stopPropagation();mapZoomBtn(1)">＋</button>
+        <button type="button" aria-label="Alejar" onclick="event.stopPropagation();mapZoomBtn(-1)">－</button>
+        <button type="button" aria-label="Restablecer zoom" onclick="event.stopPropagation();mapZoomReset()">⟲</button>
+      </div>
     </div>
     <div class="filterbar" style="margin-top:12px">
       <button class="fbtn on" data-f="all" onclick="setFilter('all')">Todas</button>
@@ -305,13 +318,14 @@ function counts(){
 }
 function renderMap(){
   const w=document.getElementById('mapwrap'); if(!w) return;
+  const inner=document.getElementById('mapinner')||w;
   [...w.querySelectorAll('.pin')].forEach(n=>n.remove());
   renderZones();
   PLANTS.forEach(p=>{
     if(p.loc!=='exterior'||p.x==null||p.y==null) return;
     const pin=document.createElement('div'); pin.className='pin'; pin.style.left=p.x+'%'; pin.style.top=p.y+'%';
     pin.innerHTML='<b style="background:'+STATUS[p.status].c+'"><span>'+String(p.id).replace('#','')+'</span></b>';
-    pin.onclick=(e)=>{ e.stopPropagation(); openDetail(p.id); }; w.appendChild(pin);
+    pin.onclick=(e)=>{ e.stopPropagation(); openDetail(p.id); }; inner.appendChild(pin);
   });
   const hp=(SETTINGS&&SETTINGS.house_pin)||DEFAULT_SETTINGS.house_pin;
   const house=document.createElement('div'); house.className='pin house';
@@ -319,7 +333,7 @@ function renderMap(){
   house.innerHTML='<b style="background:#6b7561"><span>🏠</span></b>';
   house.title='Plantas de interior';
   house.onclick=(e)=>{ e.stopPropagation(); showView('interior'); };
-  w.appendChild(house);
+  inner.appendChild(house);
 }
 function plantCard(p){
   const c=document.createElement('div'); c.className='card'; c.onclick=()=>openDetail(p.id);
@@ -475,7 +489,8 @@ async function pinOnMap(id){
   const m=document.getElementById('mapMode'); m.textContent='Toca el mapa para colocar '+id; m.style.background='#ffe9a8';
 }
 function mapXY(e){
-  const w=document.getElementById('mapwrap'); const rc=w.getBoundingClientRect();
+  const el=document.getElementById('mapinner')||document.getElementById('mapwrap');
+  const rc=el.getBoundingClientRect();
   return { x:(e.clientX-rc.left)/rc.width*100, y:(e.clientY-rc.top)/rc.height*100 };
 }
 function resetMapMode(){
@@ -510,6 +525,7 @@ function showView(v){
     bb.style.display='flex';
     document.getElementById('backTitle').textContent = v==='exterior' ? '🌳 Exterior — Jardín' : '🏠 Interior — Invernadero';
   }
+  mapScale=1; mapTX=0; mapTY=0; { const _mi=document.getElementById('mapinner'); if(_mi) _mi.style.transform=''; }
   window.scrollTo(0,0);
 }
 function goHome(){
@@ -722,6 +738,35 @@ function handleHash(){
   openDetail(p.id);
 }
 window.addEventListener('hashchange', handleHash);
+
+/* ---------------- v4: zoom / paneo del mapa (solo el mapa se agranda) ---------------- */
+let mapScale=1, mapTX=0, mapTY=0, gestureMoved=false;
+function applyMapTransform(){ const inner=document.getElementById('mapinner'); if(inner) inner.style.transform='translate('+mapTX+'px,'+mapTY+'px) scale('+mapScale+')'; }
+function clampPan(){ const w=document.getElementById('mapwrap'); if(!w) return; const W=w.clientWidth,H=w.clientHeight; const minX=W-W*mapScale,minY=H-H*mapScale; mapTX=Math.max(minX,Math.min(0,mapTX)); mapTY=Math.max(minY,Math.min(0,mapTY)); }
+function zoomAt(px,py,ns){ ns=Math.max(1,Math.min(4,ns)); const cx=(px-mapTX)/mapScale, cy=(py-mapTY)/mapScale; mapScale=ns; mapTX=px-cx*mapScale; mapTY=py-cy*mapScale; clampPan(); applyMapTransform(); }
+function mapZoomBtn(dir){ const w=document.getElementById('mapwrap'); if(!w)return; zoomAt(w.clientWidth/2,w.clientHeight/2, mapScale*(dir>0?1.6:1/1.6)); }
+function mapZoomReset(){ mapScale=1; mapTX=0; mapTY=0; applyMapTransform(); }
+function initMapZoom(){
+  const wrap=document.getElementById('mapwrap'); if(!wrap||wrap._zi) return; wrap._zi=true;
+  const pts=new Map(); let startDist=0,startScale=1,panLast=null,downXY=null;
+  const D=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y), M=(a,b)=>({x:(a.x+b.x)/2,y:(a.y+b.y)/2});
+  wrap.addEventListener('pointerdown',e=>{
+    pts.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    if(pts.size===1){ panLast={x:e.clientX,y:e.clientY}; downXY={x:e.clientX,y:e.clientY}; gestureMoved=false; }
+    else if(pts.size===2){ const p=[...pts.values()]; startDist=D(p[0],p[1]); startScale=mapScale; }
+  });
+  wrap.addEventListener('pointermove',e=>{
+    if(!pts.has(e.pointerId)) return;
+    pts.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    const p=[...pts.values()];
+    if(p.length>=2){ const d=D(p[0],p[1]); if(startDist>0){ const m=M(p[0],p[1]); const rc=wrap.getBoundingClientRect(); zoomAt(m.x-rc.left,m.y-rc.top, startScale*(d/startDist)); } gestureMoved=true; e.preventDefault(); }
+    else if(panLast){ if(downXY && (Math.abs(e.clientX-downXY.x)+Math.abs(e.clientY-downXY.y))>8) gestureMoved=true; if(mapScale>1){ mapTX+=e.clientX-panLast.x; mapTY+=e.clientY-panLast.y; clampPan(); applyMapTransform(); } panLast={x:e.clientX,y:e.clientY}; }
+  });
+  const up=e=>{ pts.delete(e.pointerId); if(pts.size<2) startDist=0; if(pts.size===0) panLast=null; };
+  window.addEventListener('pointerup',up); window.addEventListener('pointercancel',up);
+  wrap.addEventListener('click',e=>{ if(gestureMoved){ e.stopPropagation(); e.preventDefault(); gestureMoved=false; } }, true);
+}
+initMapZoom();
 
 init();
 </script>
