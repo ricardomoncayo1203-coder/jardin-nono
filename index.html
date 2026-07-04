@@ -161,7 +161,7 @@
   <div class="loginbox">
     <h1>🌿 Jardín de Nono</h1>
     <p>Entra con tu usuario para ver y cuidar el jardín.</p>
-    <div class="field"><label>Correo</label><input id="liEmail" type="email" autocomplete="username" placeholder="tucorreo@ejemplo.com"></div>
+    <div class="field"><label>Usuario</label><input id="liEmail" type="text" autocapitalize="none" autocorrect="off" autocomplete="username" placeholder="ej: freddy"></div>
     <div class="field"><label>Contraseña</label><input id="liPass" type="password" autocomplete="current-password" placeholder="••••••••"></div>
     <button class="btn primary" id="liBtn" onclick="doLogin()">Entrar</button>
     <div id="loginErr"></div>
@@ -304,7 +304,8 @@ async function init(){
 }
 function showLogin(){ document.getElementById('login').style.display='flex'; document.getElementById('app').style.display='none'; }
 async function doLogin(){
-  const email=document.getElementById('liEmail').value.trim(), pass=document.getElementById('liPass').value;
+  let user=document.getElementById('liEmail').value.trim(), pass=document.getElementById('liPass').value;
+  const email = user.includes('@') ? user : user.toLowerCase()+'@jardinnono.com';
   const err=document.getElementById('loginErr'); err.textContent='';
   document.getElementById('liBtn').textContent='Entrando…';
   const { error } = await sb.auth.signInWithPassword({ email, password:pass });
