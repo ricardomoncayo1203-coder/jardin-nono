@@ -1,4 +1,5 @@
 import { useEffect, useRef, useCallback } from 'react'
+import { Home, Plus, Minus, RotateCcw } from 'lucide-react'
 import { MAP_URL, STATUS } from '../lib/supabase'
 import { centroid, zoneOf, zoneBBox } from '../lib/geometry'
 
@@ -229,16 +230,16 @@ export default function MapView({
             <div className="pin house" title="Plantas de interior"
               style={{ left: housePin.x + '%', top: housePin.y + '%' }}
               onClick={e => { e.stopPropagation(); onGoInterior() }}>
-              <b style={{ background: '#6b7561' }}><span>🏠</span></b>
+              <b style={{ background: '#6b7561' }}><span><Home size={16} strokeWidth={2.4} aria-label="Interior" /></span></b>
             </div>
           )}
         </div>
         <div className="absolute bottom-2 right-2 z-20 flex flex-col gap-1.5">
-          {[['＋', () => zoomBtn(1), 'Acercar'], ['－', () => zoomBtn(-1), 'Alejar'], ['⟲', zoomReset, 'Restablecer zoom']].map(([t, fn, label]) => (
+          {[[Plus, () => zoomBtn(1), 'Acercar'], [Minus, () => zoomBtn(-1), 'Alejar'], [RotateCcw, zoomReset, 'Restablecer zoom']].map(([Icon, fn, label]) => (
             <button key={label} type="button" aria-label={label}
               onClick={e => { e.stopPropagation(); fn() }}
-              className="h-10 w-10 cursor-pointer rounded-xl border border-hairline bg-white/95 p-0 text-xl font-extrabold leading-none text-brand shadow-md">
-              {t}
+              className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-xl border border-hairline bg-white/95 p-0 text-brand shadow-md">
+              <Icon size={19} strokeWidth={2.6} aria-hidden="true" />
             </button>
           ))}
         </div>

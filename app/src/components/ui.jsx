@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { User } from 'lucide-react'
 import { STATUS } from '../lib/supabase'
 
 /* Las hojas y diálogos usan animaciones CSS puras (no dependen de JS/rAF):
@@ -90,7 +91,7 @@ export function FilterBar({ filter, setFilter }) {
   return (
     <div className="mb-3 flex flex-wrap gap-2">
       {btn('all', 'Todas')}
-      {btn('mine', '🙋 Mis plantas')}
+      {btn('mine', <span className="inline-flex items-center gap-1.5"><User size={13} aria-hidden="true" /> Mis plantas</span>)}
       {btn('rojo', <span className="inline-flex items-center gap-1.5"><Dot status="rojo" /> Urgentes</span>)}
       {btn('amarillo', <span className="inline-flex items-center gap-1.5"><Dot status="amarillo" /> Observación</span>)}
       {btn('verde', <span className="inline-flex items-center gap-1.5"><Dot status="verde" /> Sanas</span>)}

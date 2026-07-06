@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Sprout } from 'lucide-react'
 import { sb, esErr, LOGIN_DOMAIN } from '../lib/supabase'
 
 export default function Login() {
@@ -27,9 +28,9 @@ export default function Login() {
            style={{ backgroundImage: 'radial-gradient(#fff 1.5px, transparent 1.5px)', backgroundSize: '26px 26px' }} />
       <div className="anim-slide-up w-full max-w-[380px] rounded-3xl bg-white/95 p-7 shadow-float backdrop-blur">
         <div
-          className="anim-pop mb-3 flex h-14 w-14 items-center justify-center rounded-2xl text-3xl"
+          className="anim-pop mb-3 flex h-14 w-14 items-center justify-center rounded-2xl"
           style={{ background: 'linear-gradient(140deg,#e9f3ea,#d3e6d5)' }}
-        >🌿</div>
+        ><Sprout size={30} className="text-brand" aria-hidden="true" /></div>
         <h1 className="m-0 font-display text-[26px] font-semibold text-brand">Jardín de Nono</h1>
         <p className="mb-5 mt-1 text-[13px] leading-snug text-soil">
           Entra con tu usuario para ver y cuidar el jardín.

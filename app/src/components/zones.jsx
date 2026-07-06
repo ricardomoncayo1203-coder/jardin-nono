@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Pencil, Trash2, Plus, StickyNote } from 'lucide-react'
 import { sb, esErr, fmtWhen } from '../lib/supabase'
 import { zoneOf } from '../lib/geometry'
 import { PlantCard } from './cards'
@@ -12,11 +13,14 @@ export function ZoneSheet({ zone, plants, profiles, settings, isAdmin, onOpenPla
       {isAdmin && (
         <div className="mb-3 flex flex-col gap-2">
           <button onClick={onRename}
-            className="w-full cursor-pointer rounded-xl border border-hairline bg-surface py-3 text-[15px] font-bold">✏️ Renombrar</button>
+            className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-hairline bg-surface py-3 text-[15px] font-bold">
+            <Pencil size={16} aria-hidden="true" /> Renombrar</button>
           <button onClick={onRedraw}
-            className="w-full cursor-pointer rounded-xl border border-hairline bg-surface py-3 text-[15px] font-bold">🖊 Redibujar límites</button>
+            className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-hairline bg-surface py-3 text-[15px] font-bold">
+            <Pencil size={16} aria-hidden="true" /> Redibujar límites</button>
           <button onClick={onDelete}
-            className="w-full cursor-pointer rounded-xl border border-rojo bg-white py-3 text-[15px] font-bold text-rojo">🗑 Eliminar zona</button>
+            className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-rojo bg-white py-3 text-[15px] font-bold text-rojo">
+            <Trash2 size={16} aria-hidden="true" /> Eliminar zona</button>
         </div>
       )}
       {!members.length && <Hint className="mb-2">No hay pines de plantas dentro de esta zona todavía.</Hint>}
@@ -42,12 +46,13 @@ export function ZoneManager({ settings, onNew, onDraw }) {
             </div>
           </div>
           <button onClick={() => onDraw(z.id)} aria-label={`Dibujar límites de ${z.name}`}
-            className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-xl border-none bg-brand text-base text-white">🖊</button>
+            className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-xl border-none bg-brand text-white">
+            <Pencil size={16} aria-hidden="true" /></button>
         </div>
       ))}
       <button onClick={onNew}
-        className="mt-1 w-full cursor-pointer rounded-xl border-none bg-brand py-3.5 text-[15px] font-bold text-white">
-        ＋ Nueva zona
+        className="mt-1 flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border-none bg-brand py-3.5 text-[15px] font-bold text-white">
+        <Plus size={17} aria-hidden="true" /> Nueva zona
       </button>
     </div>
   )
@@ -82,8 +87,8 @@ export function ZoneNotes({ zone, me, profiles }) {
 
   return (
     <div className="mt-4">
-      <div className="mb-2 text-[13px] font-extrabold uppercase tracking-wide text-brand">
-        📝 Notas de la zona: {zone.name}
+      <div className="mb-2 flex items-center gap-1.5 text-[13px] font-extrabold uppercase tracking-wide text-brand">
+        <StickyNote size={14} aria-hidden="true" /> Notas de la zona: {zone.name}
       </div>
       <Hint className="mb-2.5">Comentario general de la zona (no de una planta). Ej: "todo el borde necesita tierra negra".</Hint>
       <textarea value={text} onChange={e => setText(e.target.value)}

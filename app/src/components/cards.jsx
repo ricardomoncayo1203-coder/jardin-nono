@@ -1,3 +1,4 @@
+import { Sprout, User } from 'lucide-react'
 import { STATUS, refPhoto } from '../lib/supabase'
 import { zoneOf } from '../lib/geometry'
 
@@ -9,12 +10,15 @@ export function PlantCard({ p, profiles, zones, onOpen }) {
   return (
     <div onClick={() => onOpen(p.id)}
       className="mb-2.5 flex cursor-pointer items-center gap-3 rounded-2xl border border-hairline bg-surface p-2.5 shadow-card transition active:scale-[0.99]">
-      <div className="flex h-14 w-14 flex-none items-center justify-center rounded-xl bg-[#e9e4d6] bg-cover bg-center text-xl"
+      <div className="flex h-14 w-14 flex-none items-center justify-center rounded-xl bg-[#e9e4d6] bg-cover bg-center"
         style={ph ? { backgroundImage: `url(${ph})` } : undefined}>
-        {ph ? '' : '🌿'}
+        {ph ? '' : <Sprout size={22} className="text-soil/60" aria-hidden="true" />}
       </div>
       <div className="min-w-0 flex-1">
-        <div className="text-[11px] font-bold text-soil">{p.id} · {zn}{who ? ` · 🙋 ${who}` : ''}</div>
+        <div className="flex items-center gap-1 text-[11px] font-bold text-soil">
+          {p.id} · {zn}
+          {who && <><span>·</span><User size={11} aria-hidden="true" /> {who}</>}
+        </div>
         <div className="truncate text-[15px] font-bold">{p.name || 'Sin nombre'}</div>
         <div className="truncate text-xs text-soil">{p.problem || STATUS[p.status].l}</div>
       </div>
@@ -29,9 +33,9 @@ export function PlantCardBig({ p, onOpen }) {
   return (
     <div onClick={() => onOpen(p.id)}
       className="cursor-pointer overflow-hidden rounded-2xl border border-hairline bg-surface shadow-card transition active:scale-[0.99]">
-      <div className="relative flex aspect-square w-full items-center justify-center bg-[#e9e4d6] bg-cover bg-center text-3xl"
+      <div className="relative flex aspect-square w-full items-center justify-center bg-[#e9e4d6] bg-cover bg-center"
         style={ph ? { backgroundImage: `url(${ph})` } : undefined}>
-        {ph ? '' : '🌿'}
+        {ph ? '' : <Sprout size={34} className="text-soil/60" aria-hidden="true" />}
         <span className="absolute left-2 top-2 rounded-lg bg-black/55 px-2 py-0.5 text-[13px] font-extrabold text-white">{p.id}</span>
         <span className="absolute right-2 top-2 h-[15px] w-[15px] rounded-full border-2 border-white shadow"
           style={{ background: STATUS[p.status].c }} />

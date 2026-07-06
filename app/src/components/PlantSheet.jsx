@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { Camera, MapPin, Sprout, User } from 'lucide-react'
 import { sb, esErr, STATUS, refPhoto, fmtWhen } from '../lib/supabase'
 import { zoneOf } from '../lib/geometry'
 import { fileToResizedDataURL, dataURLtoBlob } from '../lib/img'
@@ -89,10 +90,12 @@ export default function PlantSheet({
 
   const semBtn = (s, label) => (
     <button key={s} onClick={() => setEntryStatus(s)}
-      className="flex-1 cursor-pointer rounded-xl border-2 bg-white px-1 py-2.5 text-[13px] font-bold transition"
+      aria-pressed={entryStatus === s}
+      className="flex min-h-11 flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl border-2 bg-white px-1 py-2.5 text-[13px] font-bold transition"
       style={entryStatus === s
         ? { borderColor: STATUS[s].c, background: STATUS[s].c + '1a' }
         : { borderColor: 'var(--color-hairline)' }}>
+      <span className="inline-block h-3 w-3 rounded-full" style={{ background: STATUS[s].c }} />
       {label}
     </button>
   )
@@ -115,7 +118,7 @@ export default function PlantSheet({
           role="button" aria-label="Ampliar foto">
           {ph
             ? <span className="absolute bottom-1 right-1 rounded-lg bg-black/55 px-1.5 py-0.5 text-[10.5px] font-bold text-white">Ampliar</span>
-            : '🌿'}
+            : <Sprout size={30} className="text-soil/60" aria-hidden="true" />}
         </div>
         <div className="flex min-w-0 flex-1 flex-col gap-1.5">
           <div className="font-display text-[18px] font-semibold leading-tight">{p.name || 'Sin nombre'}</div>
@@ -124,7 +127,10 @@ export default function PlantSheet({
             style={{ color: stc, borderColor: stc, background: stc + '1a' }}>
             {STATUS[p.status].l}
           </div>
-          <div className="text-xs text-soil">📍 {zname}{who ? ` · 🙋 ${who}` : ''}</div>
+          <div className="flex items-center gap-1 text-xs text-soil">
+            <MapPin size={12} aria-hidden="true" /> {zname}
+            {who && <><span className="mx-0.5">·</span><User size={12} aria-hidden="true" /> {who}</>}
+          </div>
         </div>
       </div>
 
@@ -160,8 +166,8 @@ export default function PlantSheet({
 
       {isAdmin && p.loc === 'exterior' && (
         <button onClick={() => onPlacePin(p.id)}
-          className="mb-2 w-full cursor-pointer rounded-xl border border-hairline bg-surface py-3 text-[15px] font-bold">
-          📍 Colocar/mover en el mapa
+          className="mb-2 flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-hairline bg-surface py-3 text-[15px] font-bold">
+          <MapPin size={17} aria-hidden="true" /> Colocar/mover en el mapa
         </button>
       )}
 
@@ -172,9 +178,9 @@ export default function PlantSheet({
       <div className="mb-3 mt-3">
         <label className="mb-1 block text-xs font-bold text-soil">Estado ahora</label>
         <div className="flex gap-2">
-          {semBtn('verde', '🟢 Sana')}
-          {semBtn('amarillo', '🟡 Observar')}
-          {semBtn('rojo', '🔴 Urgente')}
+          {semBtn('verde', 'Sana')}
+          {semBtn('amarillo', 'Observar')}
+          {semBtn('rojo', 'Urgente')}
         </div>
       </div>
 
@@ -192,8 +198,8 @@ export default function PlantSheet({
       <input ref={fileRef} type="file" accept="image/*" capture="environment"
         className="hidden" onChange={onPhotoPicked} />
       <button onClick={() => fileRef.current?.click()}
-        className="mb-2 w-full cursor-pointer rounded-xl border border-hairline bg-surface py-3 text-[15px] font-bold">
-        📷 Tomar / elegir foto
+        className="mb-2 flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border-2 border-accent/60 bg-surface py-3 text-[15px] font-bold text-accent">
+        <Camera size={18} aria-hidden="true" /> Tomar / elegir foto
       </button>
       <button onClick={submitEntry} disabled={saving}
         className="w-full cursor-pointer rounded-xl border-none bg-brand py-3.5 text-[15px] font-bold text-white disabled:opacity-70">

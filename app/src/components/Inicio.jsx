@@ -1,3 +1,4 @@
+import { TreePine, Sprout } from 'lucide-react'
 import { Dot, Hint } from './ui'
 
 function secCounts(plants, loc) {
@@ -38,7 +39,7 @@ export default function Inicio({ me, plants, onGo }) {
   return (
     <div className="anim-fade">
       <div className="mb-1 mt-1 font-display text-[15px] text-soil">
-        Hola, <b className="text-brand">{me?.name || ''}</b> 🌱
+        Hola, <b className="text-brand">{me?.name || ''}</b>
       </div>
       <div className="mb-3 flex gap-2">
         {stat(plants.length, 'Plantas')}
@@ -47,17 +48,23 @@ export default function Inicio({ me, plants, onGo }) {
         {stat(r, 'Urgentes', 'rojo')}
       </div>
       <div className="mb-3 grid grid-cols-2 gap-3">
-        <div onClick={() => onGo('interior')}
+        <div onClick={() => onGo('interior')} role="button"
           className="cursor-pointer rounded-3xl border border-hairline bg-surface px-3 py-6 text-center shadow-card transition active:scale-[0.97]">
-          <div className="text-5xl leading-none">🏠</div>
-          <div className="mt-2 font-display text-[20px] font-semibold text-brand">Interior</div>
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl"
+            style={{ background: 'linear-gradient(140deg,#e9f3ea,#d3e6d5)' }}>
+            <Sprout size={34} className="text-brand" aria-hidden="true" />
+          </div>
+          <div className="mt-2.5 font-display text-[20px] font-semibold text-brand">Interior</div>
           <div className="mt-0.5 text-[11px] text-soil">Invernadero · plantas A–O</div>
           <MiniSem c={int} />
         </div>
-        <div onClick={() => onGo('exterior')}
+        <div onClick={() => onGo('exterior')} role="button"
           className="cursor-pointer rounded-3xl border border-hairline bg-surface px-3 py-6 text-center shadow-card transition active:scale-[0.97]">
-          <div className="text-5xl leading-none">🌳</div>
-          <div className="mt-2 font-display text-[20px] font-semibold text-brand">Exterior</div>
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl"
+            style={{ background: 'linear-gradient(140deg,#e9f3ea,#d3e6d5)' }}>
+            <TreePine size={34} className="text-brand" aria-hidden="true" />
+          </div>
+          <div className="mt-2.5 font-display text-[20px] font-semibold text-brand">Exterior</div>
           <div className="mt-0.5 text-[11px] text-soil">Jardín · plantas #1–#18</div>
           <MiniSem c={ext} />
         </div>

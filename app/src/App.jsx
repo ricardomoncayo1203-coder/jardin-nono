@@ -1,15 +1,21 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import {
-  sb, esErr, DEFAULT_SETTINGS, ZONE_COLORS, refPhoto, STATUS_ORDER,
+  LogOut, TreePine, Sprout, FileBarChart2, Pencil, Home as HomeIcon,
+  Check, Undo2, X, Map as MapIcon, Leaf,
+} from 'lucide-react'
+import {
+  sb, esErr, DEFAULT_SETTINGS, ZONE_COLORS, STATUS_ORDER,
 } from './lib/supabase'
 import { zoneOf } from './lib/geometry'
 import Login from './components/Login'
 import Inicio from './components/Inicio'
 import MapView from './components/MapView'
 import PlantSheet from './components/PlantSheet'
+import Reporte from './components/Reporte'
+import BottomNav from './components/BottomNav'
 import { ZoneSheet, ZoneManager, ZoneNotes } from './components/zones'
 import { PlantCard, PlantCardBig } from './components/cards'
-import { Sheet, Lightbox, InputDialog, Hint, FilterBar, Dot } from './components/ui'
+import { Sheet, Lightbox, InputDialog, Hint, FilterBar } from './components/ui'
 
 export default function App() {
   const [session, setSession] = useState(undefined)   /* undefined = cargando */
@@ -17,13 +23,13 @@ export default function App() {
   const [plants, setPlants] = useState([])
   const [profiles, setProfiles] = useState({})
   const [settings, setSettings] = useState(() => JSON.parse(JSON.stringify(DEFAULT_SETTINGS)))
-  const [view, setView] = useState('inicio')          /* inicio | exterior | interior */
+  const [view, setView] = useState('inicio')          /* inicio | exterior | interior | reporte */
   const [filter, setFilter] = useState('all')
   const [zoneFocus, setZoneFocus] = useState(null)
   const [sheet, setSheet] = useState(null)            /* {type:'plant',id} | {type:'zone',id} | {type:'zones'} */
   const [placing, setPlacing] = useState(null)        /* {mode:'pin',id} | {mode:'house'} | {mode:'draw',zoneId,points} */
   const [lightbox, setLightbox] = useState(null)
-  const [dialog, setDialog] = useState(null)          /* {title,placeholder,initial,onSubmit} */
+  const [dialog, setDialog] = useState(null)
   const [ready, setReady] = useState(false)
   const bootedFor = useRef(null)
   const hashDone = useRef(false)
@@ -111,16 +117,13 @@ export default function App() {
     return () => window.removeEventListener('hashchange', go)
   }, [ready, plants])
 
-  /* ---------------- navegación ---------------- */
-  function goView(v) {
+  /* ---------------- navegación (barra inferior) ---------------- */
+  function nav(v) {
+    if (placing?.mode === 'draw') cancelZoneDraw()
+    else setPlacing(null)
     setView(v)
     setZoneFocus(null)
     window.scrollTo(0, 0)
-  }
-  function goHome() {
-    if (placing?.mode === 'draw') cancelZoneDraw()
-    setPlacing(null)
-    goView('inicio')
   }
 
   /* ---------------- colocar pin / casa / dibujar zona ---------------- */
@@ -237,7 +240,7 @@ export default function App() {
   /* ---------------- textos del modo del mapa ---------------- */
   const modeText = !placing ? 'Toca un pin o una zona'
     : placing.mode === 'pin' ? `Toca el mapa para colocar ${placing.id}`
-    : placing.mode === 'house' ? 'Toca el mapa donde está la casa 🏠'
+    : placing.mode === 'house' ? 'Toca el mapa donde está la casa'
     : 'Toca las esquinas del área (mín. 3 puntos)'
 
   /* ---------------- render ---------------- */
@@ -245,7 +248,7 @@ export default function App() {
     return (
       <div className="fixed inset-0 flex items-center justify-center"
         style={{ background: 'linear-gradient(165deg,#2c5e33,#1b3d20)' }}>
-        <div className="animate-pulse text-4xl">🌿</div>
+        <Leaf size={40} className="animate-pulse text-white/80" aria-label="Cargando" />
       </div>
     )
   }
@@ -253,7 +256,7 @@ export default function App() {
   if (!ready) {
     return (
       <div className="fixed inset-0 flex flex-col items-center justify-center gap-3 bg-cream">
-        <div className="animate-bounce text-4xl">🌿</div>
+        <Sprout size={38} className="animate-bounce text-brand" aria-hidden="true" />
         <div className="text-sm font-semibold text-soil">Cargando el jardín…</div>
       </div>
     )
@@ -269,10 +272,18 @@ export default function App() {
     : sheet?.type === 'zones' ? 'Zonas del jardín'
     : ''
 
+  const sectionTitle = view === 'exterior'
+    ? { icon: TreePine, label: 'Exterior — Jardín' }
+    : view === 'interior'
+    ? { icon: Sprout, label: 'Interior — Invernadero' }
+    : view === 'reporte'
+    ? { icon: FileBarChart2, label: 'Reporte mensual' }
+    : null
+
   return (
-    <div className="min-h-screen pb-10">
+    <div className="min-h-dvh pb-28">
       {/* header */}
-      <header className="sticky top-0 z-50 flex items-center justify-between px-4 py-3 text-white shadow-md"
+      <header className="sticky top-0 z-50 flex items-center justify-between px-4 py-2.5 text-white shadow-md"
         style={{ background: 'linear-gradient(120deg,#2c5e33,#25522c)' }}>
         <div>
           <h1 className="m-0 font-display text-[17px] font-semibold">Jardín de Nono</h1>
@@ -280,24 +291,22 @@ export default function App() {
         </div>
         <div className="flex items-center gap-2 text-xs">
           <span><b>{me?.name}</b>{isAdmin ? ' · admin' : ''}</span>
-          <button onClick={doLogout}
-            className="min-h-10 cursor-pointer rounded-xl border-none bg-white/15 px-3.5 py-1.5 text-xs font-semibold text-white">Salir</button>
+          <button onClick={doLogout} aria-label="Cerrar sesión"
+            className="flex min-h-10 cursor-pointer items-center gap-1.5 rounded-xl border-none bg-white/15 px-3 py-1.5 text-xs font-semibold text-white">
+            <LogOut size={14} aria-hidden="true" /> Salir
+          </button>
         </div>
       </header>
 
-      {/* barra volver */}
-      {view !== 'inicio' && (
-        <div className="sticky top-[52px] z-40 flex items-center gap-2.5 border-b border-hairline bg-surface px-4 py-2.5">
-          <button onClick={goHome}
-            className="min-h-10 cursor-pointer rounded-full border border-hairline bg-cream px-4 py-1.5 text-[13px] font-bold text-brand">← Inicio</button>
-          <span className="text-[15px] font-extrabold">
-            {view === 'exterior' ? '🌳 Exterior — Jardín' : '🏠 Interior — Invernadero'}
-          </span>
-        </div>
-      )}
+      <main className="mx-auto max-w-lg px-4 py-3.5">
+        {sectionTitle && (
+          <div className="mb-3 flex items-center gap-2">
+            <sectionTitle.icon size={19} className="text-brand" aria-hidden="true" />
+            <span className="font-display text-[17px] font-semibold">{sectionTitle.label}</span>
+          </div>
+        )}
 
-      <main className="px-4 py-3.5">
-        {view === 'inicio' && <Inicio me={me} plants={plants} onGo={goView} />}
+        {view === 'inicio' && <Inicio me={me} plants={plants} onGo={nav} />}
 
         {view === 'exterior' && (
           <div className="anim-fade">
@@ -306,21 +315,33 @@ export default function App() {
               <div className="mb-2 flex flex-wrap items-center gap-2">
                 {isAdmin && !placing && <>
                   <button onClick={() => setSheet({ type: 'zones' })}
-                    className="min-h-10 cursor-pointer rounded-full border border-hairline bg-surface px-3.5 py-1.5 text-xs font-semibold text-soil">✏️ Zonas</button>
+                    className="flex min-h-10 cursor-pointer items-center gap-1.5 rounded-full border border-hairline bg-surface px-3.5 py-1.5 text-xs font-semibold text-soil">
+                    <Pencil size={13} aria-hidden="true" /> Zonas
+                  </button>
                   <button onClick={startPlaceHouse}
-                    className="min-h-10 cursor-pointer rounded-full border border-hairline bg-surface px-3.5 py-1.5 text-xs font-semibold text-soil">🏠 Mover casa</button>
+                    className="flex min-h-10 cursor-pointer items-center gap-1.5 rounded-full border border-hairline bg-surface px-3.5 py-1.5 text-xs font-semibold text-soil">
+                    <HomeIcon size={13} aria-hidden="true" /> Mover casa
+                  </button>
                 </>}
                 {placing?.mode === 'draw' && <>
                   <button onClick={finishZoneDraw}
-                    className="min-h-10 cursor-pointer rounded-full border border-brand bg-brand px-3.5 py-1.5 text-xs font-semibold text-white">✔ Listo</button>
+                    className="flex min-h-10 cursor-pointer items-center gap-1.5 rounded-full border border-brand bg-brand px-3.5 py-1.5 text-xs font-semibold text-white">
+                    <Check size={13} aria-hidden="true" /> Listo
+                  </button>
                   <button onClick={undoVertex}
-                    className="min-h-10 cursor-pointer rounded-full border border-hairline bg-surface px-3.5 py-1.5 text-xs font-semibold text-soil">↩ Deshacer</button>
+                    className="flex min-h-10 cursor-pointer items-center gap-1.5 rounded-full border border-hairline bg-surface px-3.5 py-1.5 text-xs font-semibold text-soil">
+                    <Undo2 size={13} aria-hidden="true" /> Deshacer
+                  </button>
                   <button onClick={cancelZoneDraw}
-                    className="min-h-10 cursor-pointer rounded-full border border-hairline bg-surface px-3.5 py-1.5 text-xs font-semibold text-soil">✕ Cancelar</button>
+                    className="flex min-h-10 cursor-pointer items-center gap-1.5 rounded-full border border-hairline bg-surface px-3.5 py-1.5 text-xs font-semibold text-soil">
+                    <X size={13} aria-hidden="true" /> Cancelar
+                  </button>
                 </>}
                 {placing && placing.mode !== 'draw' && (
                   <button onClick={() => setPlacing(null)}
-                    className="min-h-10 cursor-pointer rounded-full border border-hairline bg-surface px-3.5 py-1.5 text-xs font-semibold text-soil">✕ Cancelar</button>
+                    className="flex min-h-10 cursor-pointer items-center gap-1.5 rounded-full border border-hairline bg-surface px-3.5 py-1.5 text-xs font-semibold text-soil">
+                    <X size={13} aria-hidden="true" /> Cancelar
+                  </button>
                 )}
               </div>
             )}
@@ -329,9 +350,9 @@ export default function App() {
             {drawnZones.length > 0 && (
               <div className="chipbar mb-2 flex gap-2 overflow-x-auto pb-1">
                 <button onClick={() => { setZoneFocus(null); window.scrollTo(0, 0) }}
-                  className={`min-h-10 flex-none cursor-pointer rounded-full border px-3.5 py-1.5 text-xs font-semibold
+                  className={`flex min-h-10 flex-none cursor-pointer items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-semibold
                     ${!zoneFocus ? 'border-brand bg-brand text-white' : 'border-hairline bg-surface text-soil'}`}>
-                  🗺️ Todas
+                  <MapIcon size={13} aria-hidden="true" /> Todas
                 </button>
                 {drawnZones.map(z => (
                   <button key={z.id} onClick={() => { setZoneFocus(z.id); window.scrollTo(0, 0) }}
@@ -349,7 +370,7 @@ export default function App() {
               placing={placing} modeText={modeText}
               onOpenPlant={id => setSheet({ type: 'plant', id })}
               onOpenZone={id => setSheet({ type: 'zone', id })}
-              onGoInterior={() => goView('interior')}
+              onGoInterior={() => nav('interior')}
               onPlace={handlePlace}
             />
 
@@ -368,7 +389,7 @@ export default function App() {
 
         {view === 'interior' && (
           <div className="anim-fade">
-            <Hint className="mb-3">🏠 Plantas del invernadero (A–O), dentro de la casa.</Hint>
+            <Hint className="mb-3">Plantas del invernadero (A–O), dentro de la casa.</Hint>
             <FilterBar filter={filter} setFilter={setFilter} />
             {filteredRows('sunroom').length === 0 && <Hint>No hay plantas en este filtro.</Hint>}
             <div className="grid grid-cols-2 gap-2.5">
@@ -378,7 +399,13 @@ export default function App() {
             </div>
           </div>
         )}
+
+        {view === 'reporte' && isAdmin && (
+          <Reporte plants={plants} profiles={profiles} settings={settings} />
+        )}
       </main>
+
+      <BottomNav view={view} isAdmin={isAdmin} onGo={nav} />
 
       {/* hoja inferior */}
       <Sheet open={!!sheet && (sheetPlant || sheetZone || sheet?.type === 'zones')}
