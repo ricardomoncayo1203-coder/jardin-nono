@@ -40,7 +40,7 @@ export default function Login() {
           <input
             type="text" value={user} onChange={e => setUser(e.target.value)}
             autoCapitalize="none" autoCorrect="off" autoComplete="username"
-            placeholder="ej: freddy" className="mb-4"
+            placeholder="ej: fredy" className="mb-4"
           />
           <label className="mb-1 block text-xs font-bold text-soil">Contraseña</label>
           <input
