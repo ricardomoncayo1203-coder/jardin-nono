@@ -1,0 +1,127 @@
+@import "@fontsource-variable/fraunces";
+@import "@fontsource-variable/inter";
+@import "tailwindcss";
+
+@theme {
+  --font-display: "Fraunces Variable", Georgia, "Times New Roman", serif;
+  --font-sans: "Inter Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+
+  --color-cream: #f6f3ea;
+  --color-surface: #ffffff;
+  --color-ink: #22301f;
+  --color-soil: #6d7763;
+  --color-hairline: #ded9cb;
+  --color-brand: #2c5e33;
+  --color-brand2: #3d7a44;
+  --color-brand-deep: #1b3d20;
+  --color-verde: #2f8f46;
+  --color-amarillo: #e0a90b;
+  --color-rojo: #cf3b30;
+  --color-gold: #c9a961;
+
+  --shadow-card: 0 1px 3px rgb(34 48 31 / 0.06), 0 4px 14px rgb(34 48 31 / 0.05);
+  --shadow-float: 0 8px 30px rgb(34 48 31 / 0.16);
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--color-cream);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+* { box-sizing: border-box; }
+
+/* textura sutil de fondo */
+body {
+  background-image: radial-gradient(rgb(44 94 51 / 0.035) 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+
+/* ---------- Mapa (portado del app clásico, lógica probada) ---------- */
+.mapwrap {
+  position: relative;
+  width: 100%;
+  border-radius: 18px;
+  overflow: hidden;
+  border: 2px solid var(--color-hairline);
+  background: #e9e4d6;
+  touch-action: none;
+}
+.mapwrap.drawing { cursor: crosshair; }
+.mapwrap.drawing .pin { pointer-events: none; }
+.mapinner { position: relative; transform-origin: 0 0; will-change: transform; }
+.mapinner > img { width: 100%; display: block; user-select: none; -webkit-user-drag: none; }
+
+.zone-svg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.zone-svg polygon[data-tap] { pointer-events: auto; }
+
+.zlabel {
+  position: absolute;
+  transform: scale(var(--pinScale, 1)) translate(-50%, -50%);
+  transform-origin: 0 0;
+  background: rgb(255 255 255 / 0.9);
+  border: 1.5px solid;
+  border-radius: 14px;
+  padding: 2px 9px;
+  font-size: 11px;
+  font-weight: 800;
+  white-space: nowrap;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.2);
+  pointer-events: none;
+}
+
+.pin {
+  position: absolute;
+  transform: scale(var(--pinScale, 1)) translate(-50%, -100%);
+  transform-origin: 0 0;
+  cursor: pointer;
+  z-index: 5;
+}
+.pin b {
+  display: flex; align-items: center; justify-content: center;
+  width: 30px; height: 30px;
+  border-radius: 50% 50% 50% 4px;
+  transform: rotate(45deg);
+  color: #fff; font-size: 11px; font-weight: 800;
+  box-shadow: 0 2px 5px rgb(0 0 0 / 0.35);
+  border: 2px solid #fff;
+}
+.pin b span { transform: rotate(-45deg); }
+.pin.house b { border-radius: 50%; transform: none; width: 34px; height: 34px; font-size: 16px; }
+.pin.house b span { transform: none; }
+
+/* inputs */
+input, textarea, select {
+  width: 100%;
+  border: 1px solid var(--color-hairline);
+  border-radius: 12px;
+  padding: 11px 13px;
+  font-size: 15px;
+  font-family: inherit;
+  background: #fff;
+  color: var(--color-ink);
+  outline: none;
+}
+input:focus, textarea:focus, select:focus {
+  border-color: var(--color-brand2);
+  box-shadow: 0 0 0 3px rgb(61 122 68 / 0.15);
+}
+textarea { min-height: 72px; resize: vertical; }
+
+/* scrollbar discreto en barras horizontales */
+.chipbar::-webkit-scrollbar { display: none; }
+.chipbar { scrollbar-width: none; }
+
+/* animaciones CSS puras (no dependen de rAF/JS — fiables en teléfonos viejos) */
+@keyframes anim-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes anim-slide-up { from { transform: translateY(40px); opacity: 0.6; } to { transform: translateY(0); opacity: 1; } }
+@keyframes anim-pop { from { transform: scale(0.94); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+.anim-fade { animation: anim-fade 0.22s ease-out; }
+.anim-slide-up { animation: anim-slide-up 0.28s cubic-bezier(0.22, 1, 0.36, 1); }
+.anim-pop { animation: anim-pop 0.2s ease-out; }
+@media (prefers-reduced-motion: reduce) {
+  .anim-fade, .anim-slide-up, .anim-pop { animation: none; }
+}
