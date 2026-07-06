@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react'
-import { Pencil, Trash2, Plus, StickyNote } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { Pencil, Trash2, Plus, StickyNote, Camera, X } from 'lucide-react'
 import { sb, esErr, fmtWhen } from '../lib/supabase'
 import { zoneOf } from '../lib/geometry'
+import { fileToResizedDataURL, dataURLtoBlob } from '../lib/img'
 import { PlantCard } from './cards'
 import { Hint } from './ui'
 
@@ -59,10 +60,13 @@ export function ZoneManager({ settings, onNew, onDraw }) {
 }
 
 /* ---------- notas de zona (comentario general, no por planta) ---------- */
-export function ZoneNotes({ zone, me, profiles }) {
+export function ZoneNotes({ zone, me, profiles, onShowPhoto }) {
   const [notes, setNotes] = useState(null)
   const [text, setText] = useState('')
+  const [pendingPhoto, setPendingPhoto] = useState(null)
+  const [saving, setSaving] = useState(false)
   const [err, setErr] = useState(false)
+  const fileRef = useRef(null)
 
   useEffect(() => { load() }, [zone.id])   // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -75,14 +79,34 @@ export function ZoneNotes({ zone, me, profiles }) {
     } catch { setNotes([]); setErr(true) }
   }
 
+  async function onPhotoPicked(e) {
+    const f = e.target.files[0]
+    e.target.value = ''
+    if (!f) return
+    try { setPendingPhoto(await fileToResizedDataURL(f)) }
+    catch (er) { alert(esErr(er)) }
+  }
+
   async function add() {
     const t = text.trim()
-    if (!t) return
+    if (!t && !pendingPhoto) return
+    setSaving(true)
+    let photo_url = null
     try {
-      const { error } = await sb.from('zone_entries').insert({ zone_id: zone.id, author: me.id, text: t })
+      if (pendingPhoto) {
+        const blob = dataURLtoBlob(pendingPhoto)
+        const path = 'zona/' + zone.id + '/' + Date.now() + '.jpg'
+        const { error: upErr } = await sb.storage.from('plant-photos')
+          .upload(path, blob, { contentType: 'image/jpeg' })
+        if (upErr) throw upErr
+        photo_url = sb.storage.from('plant-photos').getPublicUrl(path).data.publicUrl
+      }
+      const { error } = await sb.from('zone_entries')
+        .insert({ zone_id: zone.id, author: me.id, text: t || null, photo_url })
       if (error) throw error
-      setText(''); load()
+      setText(''); setPendingPhoto(null); load()
     } catch (e) { alert('No se pudo guardar la nota de zona: ' + esErr(e)) }
+    finally { setSaving(false) }
   }
 
   return (
@@ -90,13 +114,32 @@ export function ZoneNotes({ zone, me, profiles }) {
       <div className="mb-2 flex items-center gap-1.5 text-[13px] font-extrabold uppercase tracking-wide text-brand">
         <StickyNote size={14} aria-hidden="true" /> Notas de la zona: {zone.name}
       </div>
-      <Hint className="mb-2.5">Comentario general de la zona (no de una planta). Ej: "todo el borde necesita tierra negra".</Hint>
+      <Hint className="mb-2.5">Comentario general de la zona (no de una planta). Puedes adjuntar una foto para explicar mejor. Ej: "estos maceteros están deteriorados".</Hint>
       <textarea value={text} onChange={e => setText(e.target.value)}
         placeholder="Escribe una nota de esta zona…" className="mb-2" />
-      <button onClick={add}
-        className="w-full cursor-pointer rounded-xl border-none bg-brand py-3.5 text-[15px] font-bold text-white">
-        Guardar nota de zona
+
+      {pendingPhoto && (
+        <div className="relative mb-2">
+          <img src={pendingPhoto} alt="Foto de la nota"
+            className="w-full rounded-xl border border-hairline" />
+          <button onClick={() => setPendingPhoto(null)} aria-label="Quitar foto"
+            className="absolute right-2 top-2 flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border-none bg-black/60 text-white">
+            <X size={16} aria-hidden="true" />
+          </button>
+        </div>
+      )}
+
+      <input ref={fileRef} type="file" accept="image/*" capture="environment"
+        className="hidden" onChange={onPhotoPicked} />
+      <button onClick={() => fileRef.current?.click()}
+        className="mb-2 flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border-2 border-accent/60 bg-surface py-3 text-[15px] font-bold text-accent">
+        <Camera size={18} aria-hidden="true" /> {pendingPhoto ? 'Cambiar foto' : 'Agregar foto (opcional)'}
       </button>
+      <button onClick={add} disabled={saving}
+        className="w-full cursor-pointer rounded-xl border-none bg-brand py-3.5 text-[15px] font-bold text-white disabled:opacity-70">
+        {saving ? 'Guardando…' : 'Guardar nota de zona'}
+      </button>
+
       <div className="mt-3">
         {notes === null && <div className="text-sm text-soil">Cargando…</div>}
         {err && <Hint>No se pudieron cargar las notas de zona.</Hint>}
@@ -104,8 +147,13 @@ export function ZoneNotes({ zone, me, profiles }) {
         {(notes || []).map(n => (
           <div key={n.id} className="mb-2 rounded-xl border border-hairline bg-surface px-3 py-2.5">
             <div className="text-[11px] font-bold text-soil">{fmtWhen(n.created_at)}</div>
-            <div className="my-1 text-sm">{n.text}</div>
-            <div className="text-[11px] font-semibold text-brand2">
+            {n.text && <div className="my-1 text-sm">{n.text}</div>}
+            {n.photo_url && (
+              <img src={n.photo_url} loading="lazy" alt="Foto de la nota"
+                className="mt-1.5 w-full cursor-pointer rounded-lg"
+                onClick={() => onShowPhoto && onShowPhoto(n.photo_url)} />
+            )}
+            <div className="mt-1 text-[11px] font-semibold text-brand2">
               — {profiles[n.author] ? profiles[n.author].name : '—'}
             </div>
           </div>

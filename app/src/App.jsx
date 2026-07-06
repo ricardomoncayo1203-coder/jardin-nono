@@ -374,7 +374,7 @@ export default function App() {
               onPlace={handlePlace}
             />
 
-            {focusZone && <ZoneNotes zone={focusZone} me={me} profiles={profiles} />}
+            {focusZone && <ZoneNotes zone={focusZone} me={me} profiles={profiles} onShowPhoto={setLightbox} />}
 
             <div className="mt-4">
               <FilterBar filter={filter} setFilter={setFilter} />
@@ -401,7 +401,7 @@ export default function App() {
         )}
 
         {view === 'reporte' && isAdmin && (
-          <Reporte plants={plants} profiles={profiles} settings={settings} />
+          <Reporte plants={plants} profiles={profiles} settings={settings} onShowPhoto={setLightbox} />
         )}
       </main>
 

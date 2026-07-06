@@ -17,7 +17,7 @@ function monthLabel(y, m) {
   return s.charAt(0).toUpperCase() + s.slice(1)
 }
 
-export default function Reporte({ plants, profiles, settings }) {
+export default function Reporte({ plants, profiles, settings, onShowPhoto }) {
   const now = new Date()
   const [ym, setYm] = useState({ y: now.getFullYear(), m: now.getMonth() })
   const [entries, setEntries] = useState(null)
@@ -102,7 +102,7 @@ export default function Reporte({ plants, profiles, settings }) {
       L.push('Notas de zona:')
       R.zs.slice(-3).forEach(n => {
         const zn = (settings.zones || []).find(z => z.id === n.zone_id)
-        L.push(`• ${zn ? zn.name + ': ' : ''}${n.text}`)
+        L.push(`• ${zn ? zn.name + ': ' : ''}${n.text || ''}${n.photo_url ? ' (con foto)' : ''}`)
       })
     }
     if (R.urgentes.length) {
@@ -211,8 +211,13 @@ export default function Reporte({ plants, profiles, settings }) {
             return (
               <div key={n.id} className="mb-2 flex gap-2.5 rounded-xl border border-hairline bg-surface px-3 py-2.5">
                 <StickyNote size={15} className="mt-0.5 flex-none text-brand2" aria-hidden="true" />
-                <div className="min-w-0 text-sm">
+                <div className="min-w-0 flex-1 text-sm">
                   {zn && <span className="font-bold">{zn.name}: </span>}{n.text}
+                  {n.photo_url && (
+                    <img src={n.photo_url} loading="lazy" alt="Foto de la nota"
+                      className="mt-1.5 max-h-40 cursor-pointer rounded-lg"
+                      onClick={() => onShowPhoto && onShowPhoto(n.photo_url)} />
+                  )}
                   <div className="mt-0.5 text-[11px] text-soil">— {profiles[n.author]?.name || '—'}</div>
                 </div>
               </div>
